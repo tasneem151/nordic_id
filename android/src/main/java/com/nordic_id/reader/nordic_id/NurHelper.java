@@ -42,6 +42,7 @@ import com.nordicid.nurapi.NurTagStorage;
 import com.nordicid.nurapi.BleScanner;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
@@ -309,7 +310,13 @@ public class NurHelper {
                     tmp.put("epc", tag.getEpcString());
                     tmp.put("rssi", Integer.toString(tag.getRssi()));
                     tag.setUserdata(tmp);
-                    jsonArray.put(json);
+                    try {
+                        json.put("epc", tag.getEpcString());
+                        json.put("rssi", Integer.toString(tag.getRssi()));
+                        jsonArray.put(json);
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
 
                     mNurListener.onInventoryResult(tmp, jsonArray.toString());
                 }

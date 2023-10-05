@@ -55,11 +55,8 @@ class _MyAppState extends State<MyApp> {
 
   List<TagEpc> _data = [];
   void updateTags(dynamic result) {
-    //log('update tags');
     setState(() {
       _data = TagEpc.parseTags(result);
-
-      _data.add(result);
     });
   }
 

@@ -52,7 +52,7 @@ public class NordicIdPlugin implements FlutterPlugin, MethodCallHandler, Activit
         channel = new MethodChannel(flutterPluginBinding.getBinaryMessenger(), "nordic_id");
         channel.setMethodCallHandler(this);
         initReadEvent(flutterPluginBinding.getBinaryMessenger());
-
+        initConnectionEvent(flutterPluginBinding.getBinaryMessenger());
     }
 
     @Override
