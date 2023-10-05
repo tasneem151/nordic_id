@@ -53,14 +53,9 @@ android {
     }
 
     dependencies {
-        //implementation fileTree(include: ['*.jar'], dir: 'libs')
         implementation files('libs/NurApiAndroid/NurApiAndroid.aar')
         implementation files('libs/NurDeviceUpdate/NurDeviceUpdate.aar')
         implementation files('libs/NurSmartPair/NurSmartPair.aar')
-        implementation files('libs/NiduLib/NiduLib.jar')
-        implementation files('libs/NurApi/NurApi.jar')
-        implementation files('libs/TDTLib/TDTLib.jar')
-        implementation files('libs/NiduLib/NiduLib.jar')
         implementation 'no.nordicsemi.android.support.v18:scanner:1.4.0'
         implementation 'no.nordicsemi.android:dfu:1.9.0'
         implementation 'androidx.multidex:multidex:2.0.1'
