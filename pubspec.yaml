@@ -1,6 +1,6 @@
 name: nordic_id
-description: A Flutter plugin for Nordic ID Reader.
-version: 1.0.0
+description: A Flutter plugin for Nordic ID Reader which allow reading RFID/UHF cards.
+version: 1.0.1
 homepage: "https://github.com/amorenew/nordic_id"
 
 environment:

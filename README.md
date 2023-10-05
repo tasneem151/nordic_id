@@ -74,8 +74,10 @@ A Flutter plugin for Nordic ID Device to read RFID/UHF tags
 #### In the `strings.xml` section add:
 
 The file in `android/app/src/main/res/values/strings.xml`
-Add the following tag:
-`<string name="app_name">Nur Sample Android</string>`
+Add the following tag BUT with your app name:
+<resources>
+    <string name="app_name">App Name</string>
+</resources>
 
 #### Add libs to your app:
 Copy from my library github the libs folder:
