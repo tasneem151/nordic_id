@@ -1,28 +1,19 @@
 # nordic_id
 
-A new Flutter plugin project.
+A Flutter plugin for Nordic ID Device to read RFID/UHF tags
 
-## Getting Started
+## Project Setup
 
-This project is a starting point for a Flutter
-[plug-in package](https://flutter.dev/developing-packages/),
-a specialized package that includes platform-specific implementation code for
-Android and/or iOS.
+#### Add to Android Project:
 
-For help getting started with Flutter development, view the
-[online documentation](https://flutter.dev/docs), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+#### In the Manifest section add:
 
+1- Add to `<manifest>` tag
+`xmlns:tools="http://schemas.android.com/tools`
 
-tools:replace="android:label"
+2- Add permissions inside `<mainfest>` tag before `<application>` tag
 
-    defaultConfig {
-        minSdkVersion 21
-
-<manifest 
-    xmlns:tools="http://schemas.android.com/tools">
-
-
+```
     <uses-permission
         android:name="android.permission.BLUETOOTH"
         android:maxSdkVersion="30" />
@@ -52,24 +43,106 @@ tools:replace="android:label"
     <uses-feature
         android:name="android.hardware.nfc"
         android:required="false" />
+```
+
+3- Add to `<application>` tag
+`tools:replace="android:label"`
+
+4-Add inside `<application>` tag
+```
 
 
-    <application
-        tools:replace="android:label">
+<activity
+        android:name="com.nordicid.nurapi.NurDeviceListActivity"
+        android:exported="true"
+        android:label="@string/app_name"
+        android:theme="@android:style/Theme.Dialog" />
 
-                <activity
-            android:name="com.nordicid.nurapi.NurDeviceListActivity"
-            android:exported="true"
-            android:label="@string/app_name"
-            android:theme="@android:style/Theme.Dialog" />
-
-        <service
-            android:name="com.nordicid.nurapi.UartService"
-            android:enabled="true"
-            android:exported="true" />
+<service
+        android:name="com.nordicid.nurapi.UartService"
+        android:enabled="true"
+        android:exported="true" />
+```
 
 
+#### In the `build.gradle` section add:
 
-    <string name="app_name">Nur Sample Android</string>
+1- In `defaultConfig` section add
+`minSdkVersion 21`
 
-compilOnly aar yay use it for rfid
+
+#### In the `strings.xml` section add:
+
+The file in `android/app/src/main/res/values/strings.xml`
+Add the following tag:
+`<string name="app_name">Nur Sample Android</string>`
+
+#### Add libs to your app:
+Copy from my library github the libs folder:
+https://github.com/amorenew/nordic_id/tree/main/example/android/app/libs
+and put the libs folder in your project in the app folder `android/app/`
+
+Then in your build.gradle in `android/app/` folder go to `dependencies` section and add the following libraries 
+
+```
+implementation files('libs/NurApiAndroid/NurApiAndroid.aar')
+implementation files('libs/NurDeviceUpdate/NurDeviceUpdate.aar')
+implementation files('libs/NurSmartPair/NurSmartPair.aar')
+```
+
+### Usage
+
+#### Library Pub link
+https://pub.dev/packages/nordic_id
+
+- Import the library:
+```
+import 'package:nordic_id/nordic_id.dart';
+import 'package:nordic_id/tag_epc.dart';
+```
+
+
+- Initialize the Nordic ID reader
+  `await NordicId.initialize;`
+
+- Open connection to the Nordic ID reader
+    `await NordicId.connect`
+
+- Refresh and Start tracing/reading the ids/cards
+    `await NordicId.refreshTracing`
+
+- Stop tracing/reading the ids/cards
+    `await NordicId.stopTrace`
+    
+- Is connected and can start tracing/reading the ids/cards
+    `bool? isConnected = await NordicId.isConnected`
+
+- Listen to connection status
+   
+   ```dart
+    NordicId.connectionStatusStream
+    .receiveBroadcastStream()
+    .listen(updateConnection);
+
+    bool isConnectedStatus = false;
+    void updateConnection(dynamic result) {
+    setState(() {
+      isConnectedStatus = result;
+    });
+  }
+   ```
+   - Listen to tags status
+
+   ```dart
+   NordicId.tagsStatusStream
+   .receiveBroadcastStream()
+   .listen(updateTags);
+
+   List<TagEpc> _data = [];
+   void updateTags(dynamic result) {
+       setState(() {
+           _data = TagEpc.parseTags(result);
+        });
+      }
+   ```
+
