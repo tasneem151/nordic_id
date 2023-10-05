@@ -39,6 +39,10 @@ import com.nordicid.nurapi.NurRespDevCaps;
 import com.nordicid.nurapi.NurRespReaderInfo;
 import com.nordicid.nurapi.NurTag;
 import com.nordicid.nurapi.NurTagStorage;
+import com.nordicid.nurapi.BleScanner;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -103,34 +107,34 @@ public class NurHelper {
 
     public void requestBluetoothPermission() {
         /** Bluetooth Permission checks **/
-        if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED ||
-                ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED ||
-                ContextCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_ADMIN) != PackageManager.PERMISSION_GRANTED ||
-                ContextCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_ADVERTISE) != PackageManager.PERMISSION_GRANTED ||
-                ContextCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED ||
-                ContextCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED ||
-                ContextCompat.checkSelfPermission(context, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED ||
-                ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+        if (ContextCompat.checkSelfPermission(context, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED ||
+                ContextCompat.checkSelfPermission(context, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED ||
+                ContextCompat.checkSelfPermission(context, android.Manifest.permission.BLUETOOTH_ADMIN) != PackageManager.PERMISSION_GRANTED ||
+                ContextCompat.checkSelfPermission(context, android.Manifest.permission.BLUETOOTH_ADVERTISE) != PackageManager.PERMISSION_GRANTED ||
+                ContextCompat.checkSelfPermission(context, android.Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED ||
+                ContextCompat.checkSelfPermission(context, android.Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED ||
+                ContextCompat.checkSelfPermission(context, android.Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED ||
+                ContextCompat.checkSelfPermission(context, android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
 
-            if (ActivityCompat.shouldShowRequestPermissionRationale(context, Manifest.permission.ACCESS_COARSE_LOCATION) ||
-                    ActivityCompat.shouldShowRequestPermissionRationale(context, Manifest.permission.ACCESS_FINE_LOCATION) ||
-                    ActivityCompat.shouldShowRequestPermissionRationale(context, Manifest.permission.BLUETOOTH_ADMIN) ||
-                    ActivityCompat.shouldShowRequestPermissionRationale(context, Manifest.permission.BLUETOOTH_ADVERTISE) ||
-                    ActivityCompat.shouldShowRequestPermissionRationale(context, Manifest.permission.BLUETOOTH_CONNECT) ||
-                    ActivityCompat.shouldShowRequestPermissionRationale(context, Manifest.permission.BLUETOOTH_SCAN) ||
-                    ActivityCompat.shouldShowRequestPermissionRationale(context, Manifest.permission.READ_EXTERNAL_STORAGE) ||
-                    ActivityCompat.shouldShowRequestPermissionRationale(context, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+            if (ActivityCompat.shouldShowRequestPermissionRationale(context, android.Manifest.permission.ACCESS_COARSE_LOCATION) ||
+                    ActivityCompat.shouldShowRequestPermissionRationale(context, android.Manifest.permission.ACCESS_FINE_LOCATION) ||
+                    ActivityCompat.shouldShowRequestPermissionRationale(context, android.Manifest.permission.BLUETOOTH_ADMIN) ||
+                    ActivityCompat.shouldShowRequestPermissionRationale(context, android.Manifest.permission.BLUETOOTH_ADVERTISE) ||
+                    ActivityCompat.shouldShowRequestPermissionRationale(context, android.Manifest.permission.BLUETOOTH_CONNECT) ||
+                    ActivityCompat.shouldShowRequestPermissionRationale(context, android.Manifest.permission.BLUETOOTH_SCAN) ||
+                    ActivityCompat.shouldShowRequestPermissionRationale(context, android.Manifest.permission.READ_EXTERNAL_STORAGE) ||
+                    ActivityCompat.shouldShowRequestPermissionRationale(context, android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
             ) {
 
             } else {
                 ActivityCompat.requestPermissions(context, new String[]{
-                                Manifest.permission.ACCESS_COARSE_LOCATION,
-                                Manifest.permission.ACCESS_FINE_LOCATION,
-                                Manifest.permission.BLUETOOTH_ADMIN,
-                                Manifest.permission.BLUETOOTH_ADVERTISE,
-                                Manifest.permission.BLUETOOTH_CONNECT,
-                                Manifest.permission.BLUETOOTH_SCAN,
-                                Manifest.permission.READ_EXTERNAL_STORAGE,
+                                android.Manifest.permission.ACCESS_COARSE_LOCATION,
+                                android.Manifest.permission.ACCESS_FINE_LOCATION,
+                                android.Manifest.permission.BLUETOOTH_ADMIN,
+                                android.Manifest.permission.BLUETOOTH_ADVERTISE,
+                                android.Manifest.permission.BLUETOOTH_CONNECT,
+                                android.Manifest.permission.BLUETOOTH_SCAN,
+                                android.Manifest.permission.READ_EXTERNAL_STORAGE,
                                 Manifest.permission.WRITE_EXTERNAL_STORAGE},
                         APP_PERMISSION_REQ_CODE);
             }
@@ -160,7 +164,7 @@ public class NurHelper {
         mUiConnButtonText = "CONNECT";
     }
 
-    public void initReading( NurListener nurListener) {
+    public void initReading(NurListener nurListener) {
         setNurListener(nurListener);
         mTraceController = new TraceTagController(mNurApi);
         mTraceController.setListener(new TraceTagController.TraceTagListener() {
@@ -294,8 +298,10 @@ public class NurHelper {
 
             // Add tags tp internal tag storage
             for (int i = 0; i < tagStorage.size(); i++) {
-
+                JSONObject json = new JSONObject();
                 NurTag tag = tagStorage.get(i);
+
+                final JSONArray jsonArray = new JSONArray();
 
                 if (mTagStorage.addTag(tag)) {
                     // Add new
@@ -303,8 +309,9 @@ public class NurHelper {
                     tmp.put("epc", tag.getEpcString());
                     tmp.put("rssi", Integer.toString(tag.getRssi()));
                     tag.setUserdata(tmp);
+                    jsonArray.put(json);
 
-                    mNurListener.onInventoryResult(tmp);
+                    mNurListener.onInventoryResult(tmp, jsonArray.toString());
                 }
             }
 
@@ -359,7 +366,7 @@ public class NurHelper {
      * NOTE: All NurApi events are called from NurApi thread, thus direct UI updates are not allowed.
      * If you need to access UI controls, you can use runOnUiThread(Runnable) or Handler.
      */
-    private NurApiListener mNurApiListener = new NurApiListener() {
+    private final NurApiListener mNurApiListener = new NurApiListener() {
         @Override
         public void triggeredReadEvent(NurEventTriggeredRead event) {
         }
@@ -400,7 +407,7 @@ public class NurHelper {
         public void disconnectedEvent() {
             mIsConnected = false;
             Log.i(TAG, "Disconnected!");
-
+            mNurListener.onConnected(false);
             context.runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
@@ -451,6 +458,7 @@ public class NurHelper {
             mIsConnected = true;
             Log.i(TAG, "Connected!");
             //Beeper.beep(Beeper.BEEP_100MS);
+            mNurListener.onConnected(true);
 
             //amr
             //mUiConnStatusTextColor = Color.GREEN;
@@ -539,6 +547,9 @@ public class NurHelper {
         return false;
     }
 
+    /**
+     * Show Sensors Page
+     */
     public void showSensors() {
         try {
             if (mNurApi.isConnected()) {
@@ -659,7 +670,7 @@ public class NurHelper {
         try {
             if (mNurApi.isConnected()) {
                 //Intent writeTagIntent = new Intent(context, WriteTag.class);
-                //context.startActivityForResult(writeTagIntent, 0);
+                // context.startActivityForResult(writeTagIntent, 0);
             } else {
                 Toast.makeText(context, "Reader not connected!", Toast.LENGTH_LONG).show();
             }

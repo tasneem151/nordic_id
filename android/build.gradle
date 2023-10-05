@@ -34,13 +34,14 @@ android {
     defaultConfig {
         compileSdk 33
         minSdkVersion 21
+        multiDexEnabled true
     }
 
     dependencies {
         implementation fileTree(include: ['*.jar'], dir: 'libs')
-        implementation files('libs/NurApiAndroid/NurApiAndroid.aar')
-        implementation files('libs/NurDeviceUpdate/NurDeviceUpdate.aar')
-        implementation files('libs/NurSmartPair/NurSmartPair.aar')
+        compileOnly files('libs/NurApiAndroid/NurApiAndroid.aar')
+        compileOnly files('libs/NurDeviceUpdate/NurDeviceUpdate.aar')
+        compileOnly files('libs/NurSmartPair/NurSmartPair.aar')
         implementation files('libs/NiduLib/NiduLib.jar')
         implementation files('libs/NurApi/NurApi.jar')
         implementation files('libs/TDTLib/TDTLib.jar')
@@ -51,9 +52,12 @@ android {
         testImplementation 'junit:junit:4.13.2'
         testImplementation 'org.mockito:mockito-core:5.0.0'
         implementation 'androidx.annotation:annotation:1.7.0'
-        implementation 'androidx.core:core:1.12.0'
+        implementation 'androidx.appcompat:appcompat:1.6.1'
+        implementation 'io.reactivex.rxjava2:rxandroid:2.1.1'
+        implementation 'io.reactivex.rxjava2:rxjava:2.2.19'
+        implementation 'androidx.multidex:multidex:2.0.1'
 
-        implementation files('/Users/apple/.pvotal/flutter/bin/cache/artifacts/engine/android-x64/flutter.jar')
+        //implementation files('/Users/apple/.pvotal/flutter/bin/cache/artifacts/engine/android-x64/flutter.jar')
     }
 
     testOptions {
