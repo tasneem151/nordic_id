@@ -33,12 +33,26 @@ android {
 
     defaultConfig {
         compileSdk 33
-        minSdkVersion 19
+        minSdkVersion 21
     }
 
     dependencies {
+        implementation fileTree(include: ['*.jar'], dir: 'libs')
+        implementation files('libs/NurApiAndroid/NurApiAndroid.aar')
+        implementation files('libs/NurDeviceUpdate/NurDeviceUpdate.aar')
+        implementation files('libs/NurSmartPair/NurSmartPair.aar')
+        implementation files('libs/NiduLib/NiduLib.jar')
+        implementation files('libs/NurApi/NurApi.jar')
+        implementation files('libs/TDTLib/TDTLib.jar')
+        implementation files('libs/NiduLib/NiduLib.jar')
+
         testImplementation 'junit:junit:4.13.2'
         testImplementation 'org.mockito:mockito-core:5.0.0'
+        implementation 'androidx.annotation:annotation:1.7.0'
+        implementation 'no.nordicsemi.android.support.v18:scanner:1.4.0'
+        implementation 'no.nordicsemi.android:dfu:1.9.0'
+        //implementation files('/Users/apple/.pvotal/flutter/bin/cache/artifacts/engine/android-x64/flutter.jar')
+
     }
 
     testOptions {

@@ -1,3 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-  package="com.nordic_id.reader.nordic_id">
+    xmlns:tools="http://schemas.android.com/tools"
+    package="com.nordic_id.reader.nordic_id">
+
+
 </manifest>
