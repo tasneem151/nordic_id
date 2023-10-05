@@ -38,7 +38,9 @@ class _MyAppState extends State<MyApp> {
       platformVersion = 'Failed to get platform version.';
     }
 
-    NordicId.connectionStatusStream.receiveBroadcastStream().listen(updateConnection);
+    NordicId.connectionStatusStream
+        .receiveBroadcastStream()
+        .listen(updateConnection);
     NordicId.tagsStatusStream.receiveBroadcastStream().listen(updateTags);
 
     // If the widget was removed from the tree while the asynchronous platform
