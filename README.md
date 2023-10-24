@@ -148,3 +148,4 @@ import 'package:nordic_id/tag_epc.dart';
       }
    ```
 
+![alt text](https://raw.githubusercontent.com/amorenew/nordic_id/main/sample.jpg)
