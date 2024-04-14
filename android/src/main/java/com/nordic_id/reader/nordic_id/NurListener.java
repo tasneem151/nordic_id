@@ -2,8 +2,10 @@ package com.nordic_id.reader.nordic_id;
 
 import java.util.HashMap;
 
-interface NurListener {
+interface   NurListener {
     void onConnected(boolean isConnected);
+
+    void onGetDetails(String details);
     
     void onStopTrace();
 

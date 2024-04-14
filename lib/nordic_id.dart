@@ -19,6 +19,9 @@ class NordicId {
   static const EventChannel connectionStatusStream =
       EventChannel('ConnectionStatus');
 
+  static const EventChannel connectionDetailsStream =
+      EventChannel('ConnectionDetails');
+
   static Future<bool?> get initialize async {
     return _channel.invokeMethod('Initialize');
   }
@@ -27,12 +30,32 @@ class NordicId {
     return _channel.invokeMethod('Connect');
   }
 
+  static Future<bool?> connectUsb() async {
+    return _channel.invokeMethod('ConnectUsb');
+  }
+
+  // static Future<bool?> deviceName() async {
+  //   return _channel.invokeMethod('DeviceName');
+  // }
+
+  static Future<bool?> read() async {
+    return _channel.invokeMethod('Read');
+  }
+
+  static Future<bool?> startInventoryStream() async {
+    return _channel.invokeMethod('StartInventoryStream');
+  }
+
+  static Future<bool?> stopInventoryStream() async {
+    return _channel.invokeMethod('StopInventoryStream');
+  }
+
   static Future<bool?> get isConnected async {
     return _channel.invokeMethod('IsConnected');
   }
 
   static Future<bool?> get destroy async {
-    return _channel.invokeMethod('destroy');
+    return _channel.invokeMethod('Destroy');
   }
 
   static Future<bool?> get stopTrace async {
@@ -43,7 +66,7 @@ class NordicId {
     return _channel.invokeMethod('Reset');
   }
 
-  static Future<bool?> get powerOff async {
+  static Future<String?> get powerOff async {
     return _channel.invokeMethod('PowerOff');
   }
 

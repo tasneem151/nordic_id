@@ -32,6 +32,7 @@ public class NordicIdPlugin implements FlutterPlugin, MethodCallHandler, Activit
     private MethodChannel channel;
     private static final String CHANNEL_Initialize = "Initialize";
     private static final String CHANNEL_Connect = "Connect";
+    private static final String CHANNEL_ConnectUsb = "ConnectUsb";
     private static final String CHANNEL_Destroy = "Destroy";
     private static final String CHANNEL_StopTrace = "StopTrace";
     private static final String CHANNEL_Reset = "Reset";
@@ -39,11 +40,17 @@ public class NordicIdPlugin implements FlutterPlugin, MethodCallHandler, Activit
     private static final String CHANNEL_RefreshTracing = "RefreshTracing";
     private static final String CHANNEL_IsConnected = "IsConnected";
     private static final String CHANNEL_ConnectionStatus = "ConnectionStatus";
+    private static final String CHANNEL_ConnectionDetails = "ConnectionDetails";
     private static final String CHANNEL_TagsStatus = "TagsStatus";
+    private static final String CHANNEL_DeviceName = "DeviceName";
+    private static final String CHANNEL_Read = "Read";
+    private static final String CHANNEL_Start_Inv_Stream = "StartInventoryStream";
+    private static final String CHANNEL_Stop_Inv_Stream = "StopInventoryStream";
 
 
     private static final PublishSubject<Boolean> connectionStatus = PublishSubject.create();
     private static final PublishSubject<String> tagsStatus = PublishSubject.create();
+    private static final PublishSubject<String> connectionDetails = PublishSubject.create();
 
     Activity activity;
 
@@ -53,6 +60,7 @@ public class NordicIdPlugin implements FlutterPlugin, MethodCallHandler, Activit
         channel.setMethodCallHandler(this);
         initReadEvent(flutterPluginBinding.getBinaryMessenger());
         initConnectionEvent(flutterPluginBinding.getBinaryMessenger());
+        initConnectionDetailsEvent(flutterPluginBinding.getBinaryMessenger());
     }
 
     @Override
@@ -67,16 +75,45 @@ public class NordicIdPlugin implements FlutterPlugin, MethodCallHandler, Activit
     private void handleMethods(MethodCall call, Result result) {
         switch (call.method) {
             case CHANNEL_Initialize:
-                init();
+                 init();
                 result.success(true);
                 break;
             case CHANNEL_Connect:
                 NurHelper.getInstance().connect();
                 result.success(true);
                 break;
+            case CHANNEL_ConnectUsb:
+                init();
+                NurHelper.getInstance().connectUsb();
+                result.success(true);
+                break;
             case CHANNEL_IsConnected:
                 final boolean isConnected = NurHelper.getInstance().isConnected();
                 result.success(isConnected);
+                break;
+//            case CHANNEL_DeviceName:
+//                NurHelper.getInstance().getDeviceName();
+//                result.success(true);
+//                break;
+            case CHANNEL_Read:
+                try {
+                    NurHelper.getInstance().clearInventoryReadings(); //Clear all from old stuff
+                    NurHelper.getInstance().doSingleInventory();
+                    result.success(true);
+                } catch (Exception ex) {
+                    Toast.makeText(activity, ex.getMessage(), Toast.LENGTH_LONG).show();
+                    result.success(false);
+                }
+                break;
+            case CHANNEL_Start_Inv_Stream:
+                NurHelper.getInstance().clearInventoryReadings();
+                NurHelper.getInstance().StartInventoryStream();
+                result.success(true);
+                break;
+            case CHANNEL_Stop_Inv_Stream:
+                NurHelper.getInstance().clearInventoryReadings();
+                NurHelper.getInstance().StopInventoryStream();
+                result.success(true);
                 break;
             case CHANNEL_Reset:
                 NurHelper.getInstance().reset();
@@ -157,9 +194,50 @@ public class NordicIdPlugin implements FlutterPlugin, MethodCallHandler, Activit
     private static void initReadEvent(BinaryMessenger messenger) {
         final EventChannel scannerEventChannel = new EventChannel(messenger, CHANNEL_TagsStatus);
         scannerEventChannel.setStreamHandler(new EventChannel.StreamHandler() {
+            private Disposable disposable;
             @Override
             public void onListen(Object o, final EventChannel.EventSink eventSink) {
                 tagsStatus
+                        .subscribeOn(Schedulers.newThread())
+                        .observeOn(AndroidSchedulers.mainThread()).subscribe(new Observer<String>() {
+                            @Override
+                            public void onSubscribe(Disposable d) {
+                                disposable = d;
+                            }
+
+                            @Override
+                            public void onNext(String tag) {
+                                eventSink.success(tag);
+                            }
+
+                            @Override
+                            public void onError(Throwable e) {
+
+                            }
+
+                            @Override
+                            public void onComplete() {
+
+                            }
+                        });
+            }
+
+            @Override
+            public void onCancel(Object o) {
+                // Dispose of the subscription when cancelled
+                if (disposable != null && !disposable.isDisposed()) {
+                    disposable.dispose();
+                }
+            }
+        });
+    }
+
+    private static void initConnectionDetailsEvent(BinaryMessenger messenger) {
+        final EventChannel connectionDetailsEventChannel = new EventChannel(messenger, CHANNEL_ConnectionDetails);
+        connectionDetailsEventChannel.setStreamHandler(new EventChannel.StreamHandler() {
+            @Override
+            public void onListen(Object o, final EventChannel.EventSink eventSink) {
+                connectionDetails
                         .subscribeOn(Schedulers.newThread())
                         .observeOn(AndroidSchedulers.mainThread()).subscribe(new Observer<String>() {
                             @Override
@@ -168,8 +246,8 @@ public class NordicIdPlugin implements FlutterPlugin, MethodCallHandler, Activit
                             }
 
                             @Override
-                            public void onNext(String tag) {
-                                eventSink.success(tag);
+                            public void onNext(String details) {
+                                eventSink.success(details);
                             }
 
                             @Override
@@ -217,6 +295,11 @@ public class NordicIdPlugin implements FlutterPlugin, MethodCallHandler, Activit
     @Override
     public void onConnected(boolean isConnected) {
         connectionStatus.onNext(isConnected);
+    }
+
+    @Override
+    public void onGetDetails(String details) {
+        connectionDetails.onNext(details);
     }
 
     @Override

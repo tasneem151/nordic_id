@@ -4,6 +4,7 @@ import android.Manifest;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -21,6 +22,8 @@ import com.nordicid.nurapi.NurApiErrors;
 import com.nordicid.nurapi.NurApiException;
 import com.nordicid.nurapi.NurApiListener;
 import com.nordicid.nurapi.NurDeviceListActivity;
+import com.nordicid.nurapi.NurApiUsbAutoConnect;
+import com.nordicid.nurapi.NurDeviceScanner;
 import com.nordicid.nurapi.NurDeviceSpec;
 import com.nordicid.nurapi.NurEventAutotune;
 import com.nordicid.nurapi.NurEventClientInfo;
@@ -71,9 +74,14 @@ public class NurHelper {
 
     private static NurApi mNurApi;
     private static AccessoryExtension mAccExt; //accessories of reader like barcode scanner, beeper, vibration..
-    static boolean mShowingSmartPair = false;
+    //static boolean mShowingSmartPair = false;
     static boolean mAppPaused = false;
     private NurApiAutoConnectTransport hAcTr;
+
+    //Need to keep track when state change on trigger button
+    private boolean mTriggerDown;
+
+    //public NurDeviceScanner deviceScanner;
 
     //In here found tags stored
     private NurTagStorage mTagStorage = new NurTagStorage();
@@ -106,8 +114,8 @@ public class NurHelper {
     }
 
 
-    public void requestBluetoothPermission() {
-        /** Bluetooth Permission checks **/
+   /* public void requestBluetoothPermission() {
+        //Bluetooth Permission checks
         if (ContextCompat.checkSelfPermission(context, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED ||
                 ContextCompat.checkSelfPermission(context, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED ||
                 ContextCompat.checkSelfPermission(context, android.Manifest.permission.BLUETOOTH_ADMIN) != PackageManager.PERMISSION_GRANTED ||
@@ -141,8 +149,28 @@ public class NurHelper {
             }
         }
     }
+*/
 
     public void init(Activity context) {
+        this.context = context;
+        mIsConnected = false;
+        mTriggerDown = false;
+
+        //Create NurApi handle.
+        mNurApi = new NurApi();
+
+        //Accessory extension contains device specific API like barcode read, beep etc..
+        //This included in NurApi.jar
+        mAccExt = new AccessoryExtension(mNurApi);
+
+        // In this activity, we use mNurApiListener for receiving events
+        mNurApi.setListener(mNurApiListener);
+
+        mUiConnStatusText = "Disconnected!";
+        mUiConnButtonText = "CONNECT";
+    }
+
+    /*public void bluetoothInit(Activity context) {
         this.context = context;
         requestBluetoothPermission();
 
@@ -163,7 +191,7 @@ public class NurHelper {
 
         mUiConnStatusText = "Disconnected!";
         mUiConnButtonText = "CONNECT";
-    }
+    }*/
 
     public void initReading(NurListener nurListener) {
         setNurListener(nurListener);
@@ -246,6 +274,46 @@ public class NurHelper {
 
     }
 
+    public void StartInventoryStream()
+    {
+//        if(mSingleTagDoTask  || mTriggerDown) {
+//            mInvStreamButton.setChecked(false);
+//            return; //Already running tasks so let's not disturb that operation.
+//        }
+        try {
+            mNurApi.clearIdBuffer(); //This command clears all tag data currently stored into the module’s memory as well as the API's internal storage.
+            clearInventoryReadings();
+            mNurApi.startInventoryStream(); //Kick inventory stream on. Now inventoryStreamEvent handler offers inventory results.
+            //mTriggerDown = true; //Flag to indicate inventory stream running
+//            mTagsAddedCounter = 0;
+//            mUiResultMsg = "Tags:" + String.valueOf(mTagsAddedCounter);
+//            mUiStatusMsg = "Inventory streaming...";
+        }
+        catch (Exception ex)
+        {
+//            mUiResultMsg = ex.getMessage();
+        }
+    }
+
+    /**
+     * Stop streaming.
+     */
+    public void StopInventoryStream()
+    {
+        try {
+            if (mNurApi.isInventoryStreamRunning())
+                mNurApi.stopInventoryStream();
+//            mTriggerDown = false;
+//            mUiStatusMsg = "Waiting button press...";
+//            mUiStatusColor = Color.BLACK;
+        }
+        catch (Exception ex)
+        {
+//            mUiResultMsg = ex.getMessage();
+//            mUiResultColor = Color.RED;
+        }
+    }
+
     /**
      * Clear tag storages from NUR and from our internal tag storage
      * Also Listview cleared
@@ -261,8 +329,10 @@ public class NurHelper {
      */
     public boolean doSingleInventory() throws Exception {
 
-        if (!mNurApi.isConnected())
+        if (!mNurApi.isConnected()) {
+            Log.i(TAG, "false");
             return false;
+        }
 
         // Make sure antenna autoswitch is enabled
         if (mNurApi.getSetupSelectedAntenna() != NurApi.ANTENNAID_AUTOSELECT)
@@ -328,6 +398,42 @@ public class NurHelper {
         }
     }
 
+    public void handleStreamInventoryResult() {
+        synchronized (mNurApi.getStorage()) {
+            HashMap<String, String> tmp;
+            NurTagStorage tagStorage = mNurApi.getStorage();
+            final JSONArray jsonArray = new JSONArray();
+
+            // Add tags tp internal tag storage
+            for (int i = 0; i < tagStorage.size(); i++) {
+                JSONObject json = new JSONObject();
+                NurTag tag = tagStorage.get(i);
+
+
+                if (mTagStorage.addTag(tag)) {
+                    // Add new
+                    tmp = new HashMap<String, String>();
+                    tmp.put("epc", tag.getEpcString());
+                    tmp.put("rssi", Integer.toString(tag.getRssi()));
+                    tag.setUserdata(tmp);
+                    try {
+                        json.put("epc", tag.getEpcString());
+                        json.put("rssi", Integer.toString(tag.getRssi()));
+                        jsonArray.put(json);
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+
+                    mNurListener.onInventoryResult(tmp, jsonArray.toString());
+                }
+            }
+
+            // Clear NurApi tag storage
+            tagStorage.clear();
+            //Beeper.beep(Beeper.BEEP_40MS);
+        }
+    }
+
     public String getConnectButtonText() {
         return mUiConnButtonText;
     }
@@ -345,25 +451,40 @@ public class NurHelper {
             mUiConnButtonText = "CONNECT";
         }
 
-        if (!mShowingSmartPair && hAcTr != null) {
-            String clsName = hAcTr.getClass().getSimpleName();
-            if (clsName.equals("NurApiSmartPairAutoConnect")) {
-                mShowingSmartPair = showSmartPairUI();
-            }
-        } else {
-            mShowingSmartPair = false;
-        }
+//        if (!mShowingSmartPair && hAcTr != null) {
+//            String clsName = hAcTr.getClass().getSimpleName();
+//            if (clsName.equals("NurApiSmartPairAutoConnect")) {
+//                mShowingSmartPair = showSmartPairUI();
+//            }
+//        } else {
+//            mShowingSmartPair = false;
+//        }
     }
 
-    public void onStop() {
-        mShowingSmartPair = false;
-    }
+//    public void onStop() {
+//        mShowingSmartPair = false;
+//    }
 
     public void destroy() {
-        //Kill connection when app killed
-        if (hAcTr != null) {
-            hAcTr.onDestroy();
-            hAcTr = null;
+        try {
+            mAppPaused = false;
+ //           mNurApi.setListener(mNurApiListener);
+//            mNurListener.onConnected(false);
+
+        if (!mNurApi.isConnected() && mIsConnected) {
+            mNurApiListener.disconnectedEvent();
+           // mUiConnButtonText = "CONNECT";
+        }
+
+        mNurApi.disconnect();
+            //Kill connection when app killed
+            if (hAcTr != null) {
+                hAcTr.dispose();
+                mNurListener.onGetDetails(hAcTr.getDetails());
+                hAcTr = null;
+            }
+        }catch(Exception ex) {
+            mUiConnStatusText = ex.getMessage();
         }
     }
 
@@ -396,6 +517,29 @@ public class NurHelper {
 
         @Override
         public void inventoryStreamEvent(NurEventInventory event) {
+
+            try {
+//                if (event.stopped) {
+//                    //InventoryStreaming is not active for ever. It automatically stopped after ~20 sec but it can be started again immediately if needed.
+//                    //check if need to restart streaming
+//                    if (mTriggerDown)
+//                        mNurApi.startInventoryStream(); //Trigger button still down so start it again.
+//
+//                } else
+                {
+
+                    if(event.tagsAdded>0) {
+                        //At least one new tag found
+                        handleStreamInventoryResult();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                //mStatusTextView.setText(ex.getMessage());
+                // mUiStatusColor = Color.RED;
+                //showOnUI();
+            }
         }
 
         @Override
@@ -413,25 +557,13 @@ public class NurHelper {
         @Override
         public void disconnectedEvent() {
             mIsConnected = false;
+            try {
+                mNurApi.disconnect();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
             Log.i(TAG, "Disconnected!");
             mNurListener.onConnected(false);
-            context.runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    Toast.makeText(context, "Reader disconnected", Toast.LENGTH_SHORT).show();
-                    showConnecting();
-
-                    // Show smart pair ui
-                    if (!mShowingSmartPair && hAcTr != null) {
-                        String clsName = hAcTr.getClass().getSimpleName();
-                        if (clsName.equals("NurApiSmartPairAutoConnect")) {
-                            mShowingSmartPair = showSmartPairUI();
-                        }
-                    } else {
-                        mShowingSmartPair = false;
-                    }
-                }
-            });
         }
 
         @Override
@@ -467,10 +599,8 @@ public class NurHelper {
             //Beeper.beep(Beeper.BEEP_100MS);
             mNurListener.onConnected(true);
 
-            //amr
             //mUiConnStatusTextColor = Color.GREEN;
             mUiConnButtonText = "DISCONNECT";
-            //amr
             //showOnUI();
         }
 
@@ -508,7 +638,30 @@ public class NurHelper {
         return mNurApiListener;
     }
 
-    boolean showSmartPairUI() {
+//    public void getDeviceName() {
+//        //Device is connected.
+//        // Let's find out is device provided with accessory support (Barcode reader, battery info...) like EXA
+//        try {
+//            if (!mNurApi.isConnected()) {
+//                mUiConnStatusText = "unknown";
+//            } else
+//            {
+//               mUiConnStatusText = hAcTr.getDetails();
+//
+//            }
+//        } catch (Exception ex) {
+//            mUiConnStatusText = ex.getMessage();
+//        }
+//
+////        mIsConnected = true;
+////        Log.i(TAG, "Connected!");
+////        mNurListener.onConnected(true);
+//
+//        mNurListener.onGetDetails(mUiConnStatusText);
+//    }
+
+
+    /*boolean showSmartPairUI() {
         if (mNurApi.isConnected() || mAppPaused)
             return false;
 
@@ -523,24 +676,21 @@ public class NurHelper {
         }
 
         return false;
-    }
+    }*/
 
-    void showConnecting() {
+/*    void showConnecting() {
         if (hAcTr != null) {
             mUiConnStatusText = "Connecting to " + hAcTr.getAddress();
-            //amr
             // mUiConnStatusTextColor = Color.YELLOW;
         } else {
             mUiConnStatusText = "Disconnected";
-            //amr
             // mUiConnStatusTextColor = Color.RED;
             mUiConnButtonText = "CONNECT";
         }
-        //amr
         // showOnUI();
-    }
+    }*/
 
-    boolean showNurUpdateUI() {
+   /* boolean showNurUpdateUI() {
         try {
             Log.d(TAG, "showNurUpdateUI()");
             Intent startIntent = new Intent(context, Class.forName("nordicid.com.nurupdate.NurDeviceUpdate"));
@@ -552,12 +702,12 @@ public class NurHelper {
         }
 
         return false;
-    }
+    }*/
 
     /**
      * Show Sensors Page
      */
-    public void showSensors() {
+   /* public void showSensors() {
         try {
             if (mNurApi.isConnected()) {
                 if (IsAccessorySupported()) {
@@ -577,14 +727,14 @@ public class NurHelper {
         } catch (Exception ex) {
             Toast.makeText(context, ex.getMessage(), Toast.LENGTH_LONG).show();
         }
-    }
+    }*/
 
     /**
      * Device firmware update from local zip file or from Nordic ID server
      * Update packets are uncompressed zip files containing firmware files and UpdateInfo.json file.
      * UpdateInfo.json described files and versions
      */
-    public void updateFirmware(int selection) {
+   /* public void updateFirmware(int selection) {
 
         try {
             if (mNurApi.isConnected()) {
@@ -598,10 +748,9 @@ public class NurHelper {
                 //If we are connected to device via Bluetooth, give current ble address.
                 updateParams.setDeviceAddress(hAcTr.getAddress());
 
-                /**
-                 * Zip path string may be empty or URL or Uri
-                 * Empty zipPath allow users to browse zip file from local file system
-                 */
+                 // Zip path string may be empty or URL or Uri
+                 // Empty zipPath allow users to browse zip file from local file system
+
 
                 try {
                     if (selection == 0) {
@@ -624,12 +773,12 @@ public class NurHelper {
         } catch (Exception ex) {
             Toast.makeText(context, ex.getMessage(), Toast.LENGTH_LONG).show();
         }
-    }
+    }*/
 
     /**
      * Handle barcode scan click. Start Barcode activity (only if reader support acessories). See Barcode.java
      */
-    public void showBarcodePage() {
+    /*public void showBarcodePage() {
         try {
             if (mNurApi.isConnected()) {
                 if (IsAccessorySupported()) {
@@ -650,13 +799,13 @@ public class NurHelper {
         } catch (Exception ex) {
             Toast.makeText(context, ex.getMessage(), Toast.LENGTH_LONG).show();
         }
-    }
+    }*/
 
 
     /**
      * Handle inventory click. Start Inventory activity. See inventory.java
      */
-    public void showInventoryPage() {
+    /*public void showInventoryPage() {
         try {
             if (mNurApi.isConnected()) {
                 //Intent inventoryIntent = new Intent(context, Inventory.class);
@@ -667,13 +816,13 @@ public class NurHelper {
         } catch (Exception ex) {
             Toast.makeText(context, ex.getMessage(), Toast.LENGTH_LONG).show();
         }
-    }
+    }*/
 
 
     /**
      * Handle tag write click. Start Write Tag activity. See Write.java
      */
-    public void onWriteTagPage() {
+    /*public void onWriteTagPage() {
         try {
             if (mNurApi.isConnected()) {
                 //Intent writeTagIntent = new Intent(context, WriteTag.class);
@@ -684,12 +833,12 @@ public class NurHelper {
         } catch (Exception ex) {
             Toast.makeText(context, ex.getMessage(), Toast.LENGTH_LONG).show();
         }
-    }
+    }*/
 
     /**
      * Handle tag trace click. Start Write Tag activity. See Trace.java
      */
-    public void onTracePage() {
+    /*public void onTracePage() {
         try {
             if (mNurApi.isConnected()) {
                 //Intent traceIntent = new Intent(context, Trace.class);
@@ -700,25 +849,29 @@ public class NurHelper {
         } catch (Exception ex) {
             Toast.makeText(context, ex.getMessage(), Toast.LENGTH_LONG).show();
         }
-    }
+    }*/
 
     /**
      * Handle power off click.
      * Sends PowerOff command to reader.
      */
-    public void powerOff() {
+    public String powerOff() {
         try {
             if (mNurApi.isConnected()) {
 
                 if (IsAccessorySupported()) { //Only device with accessory can be power off by command
                     mAccExt.powerDown(); //Power off device
-                    Toast.makeText(context, "Device Power OFF!", Toast.LENGTH_LONG).show();
-                } else Toast.makeText(context, "PowerOff not supported!", Toast.LENGTH_LONG).show();
+                    //Toast.makeText(context, "Device Power OFF!", Toast.LENGTH_LONG).show();
+                    return "Device Power OFF!";
+                } else return  "PowerOff not supported!";
+                    //Toast.makeText(context, "PowerOff not supported!", Toast.LENGTH_LONG).show();
             } else {
-                Toast.makeText(context, "Reader not connected!", Toast.LENGTH_LONG).show();
+                return "Reader not connected!";
+                //Toast.makeText(context, "Reader not connected!", Toast.LENGTH_LONG).show();
             }
         } catch (Exception ex) {
-            Toast.makeText(context, ex.getMessage(), Toast.LENGTH_LONG).show();
+            return ex.getMessage();
+            //Toast.makeText(context, ex.getMessage(), Toast.LENGTH_LONG).show();
         }
 
     }
@@ -730,13 +883,55 @@ public class NurHelper {
      * User can select device from list to connect.
      * It's useful to store last connected device MAC to persistent memory inorder to reconnect later on to same device without selecting from list. This demo doesn't do MAC storing.
      */
+
     public void connect() {
         if (mNurApi.isConnected()) {
             hAcTr.dispose();
             hAcTr = null;
         } else {
-            Toast.makeText(context, "Start searching. Make sure device power ON!", Toast.LENGTH_LONG).show();
-            NurDeviceListActivity.startDeviceRequest(context, mNurApi);
+           // Toast.makeText(context, "Start searching. Make sure device power ON!", Toast.LENGTH_LONG).show();
+            //TODO: change connection here
+
+//            String strAddress;
+//            hAcTr = new NurApiUsbAutoConnect(context, mNurApi);
+//            strAddress = "USB";
+//            Log.i(TAG, "Dev selected: code = " + strAddress);
+//            hAcTr.setAddress(strAddress);
+//            hAcTr.onResume();
+
+
+
+//            NurApiUsbAutoConnect usbAutoConnect =  new NurApiUsbAutoConnect(context, mNurApi);
+//            usbAutoConnect.setAddress("USB");
+//            usbAutoConnect.onResume();
+
+            // original connection
+            //NurDeviceListActivity.startDeviceRequest(context, mNurApi);
+        }
+    }
+
+    public void connectUsb() {
+        if (mNurApi.isConnected()) {
+            hAcTr.dispose();
+            hAcTr = null;
+        } else {
+            String strAddress;
+            hAcTr = new NurApiUsbAutoConnect(context, mNurApi);
+            strAddress = hAcTr.getType();
+            Log.i(TAG, "Dev selected: code = " + strAddress);
+            hAcTr.setAddress(strAddress);
+            hAcTr.onResume();
+            mUiConnStatusText = hAcTr.getDetails();
+            mNurListener.onGetDetails(mUiConnStatusText);
+
+
+
+//            NurApiUsbAutoConnect usbAutoConnect =  new NurApiUsbAutoConnect(context, mNurApi);
+//            usbAutoConnect.setAddress("USB");
+//            usbAutoConnect.onResume();
+
+            // original connection
+            //NurDeviceListActivity.startDeviceRequest(context, mNurApi);
         }
     }
 
@@ -800,7 +995,7 @@ public class NurHelper {
                     Log.i(TAG, "Dev selected: code = " + strAddress);
                     hAcTr.setAddress(strAddress);
 
-                    showConnecting();
+                    //showConnecting();
 
                     //If you want connect to same device automatically later on, you can save 'strAddress" and use that for connecting at app startup for example.
                     //saveSettings(spec);

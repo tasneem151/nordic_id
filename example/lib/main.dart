@@ -18,6 +18,7 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   String _platformVersion = 'Unknown';
+  String? device = 'Disconnected';
   //final _nordicIdPlugin = NordicId();
 
   @override
@@ -42,6 +43,9 @@ class _MyAppState extends State<MyApp> {
         .receiveBroadcastStream()
         .listen(updateConnection);
     NordicId.tagsStatusStream.receiveBroadcastStream().listen(updateTags);
+    NordicId.connectionDetailsStream
+        .receiveBroadcastStream()
+        .listen(updateConnectionDetails);
 
     // If the widget was removed from the tree while the asynchronous platform
     // message was in flight, we want to discard the reply rather than calling
@@ -53,7 +57,10 @@ class _MyAppState extends State<MyApp> {
     });
   }
 
-  List<TagEpc> _data = [];
+  List<TagEpc> _data = [
+    TagEpc(epc: ' ', rssi: ' '),
+    TagEpc(epc: ' ', rssi: ' ')
+  ];
   void updateTags(dynamic result) {
     setState(() {
       _data = TagEpc.parseTags(result);
@@ -62,11 +69,27 @@ class _MyAppState extends State<MyApp> {
 
   bool isConnectedStatus = false;
 
-  void updateConnection(dynamic result) {
+  void updateConnection(dynamic result) async {
     setState(() {
       isConnectedStatus = result;
     });
   }
+
+  void updateConnectionDetails(dynamic result) async {
+    setState(() {
+      device = result;
+    });
+  }
+
+  // @override
+  // void didChangeDependencies() {
+  //   if (isConnectedStatus) {
+  //     setState(() async {
+  //       device = await NordicId.deviceName();
+  //     });
+  //   }
+  //   super.didChangeDependencies();
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -75,97 +98,130 @@ class _MyAppState extends State<MyApp> {
         appBar: AppBar(
           title: const Text('Nordic ID Plugin example'),
         ),
-        body: Center(
-          child: Column(
-            children: [
-              Text('Running on: $_platformVersion\n'),
-              MaterialButton(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(18.0),
+        body: SingleChildScrollView(
+          child: Center(
+            child: Column(
+              children: [
+                Text('Running on: $_platformVersion\n'),
+                MaterialButton(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(18.0),
+                  ),
+                  color: Colors.blueAccent,
+                  child: const Text(
+                    'Connect',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  onPressed: () async {
+                    await NordicId.connectUsb();
+                  },
                 ),
-                color: Colors.blueAccent,
-                child: const Text(
-                  'Initialize',
-                  style: TextStyle(color: Colors.white),
+                MaterialButton(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(18.0),
+                  ),
+                  color: Colors.blueAccent,
+                  child: const Text(
+                    'Start inventory stream',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  onPressed: () async {
+                    await NordicId.startInventoryStream();
+                  },
                 ),
-                onPressed: () async {
-                  await NordicId.initialize;
-                },
-              ),
-              MaterialButton(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(18.0),
+                MaterialButton(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(18.0),
+                  ),
+                  color: Colors.blueAccent,
+                  child: const Text(
+                    'Stop inventory stream',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  onPressed: () async {
+                    await NordicId.stopInventoryStream();
+                  },
                 ),
-                color: Colors.blueAccent,
-                child: const Text(
-                  'Connect',
-                  style: TextStyle(color: Colors.white),
+                MaterialButton(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(18.0),
+                  ),
+                  color: Colors.blueAccent,
+                  child: const Text(
+                    'Read single tag',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  onPressed: () async {
+                    await NordicId.read();
+                  },
                 ),
-                onPressed: () async {
-                  await NordicId.connect;
-                },
-              ),
-              MaterialButton(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(18.0),
+
+                // MaterialButton(
+                //   shape: RoundedRectangleBorder(
+                //     borderRadius: BorderRadius.circular(18.0),
+                //   ),
+                //   color: Colors.blueAccent,
+                //   child: const Text(
+                //     'Stop Trace/scan',
+                //     style: TextStyle(color: Colors.white),
+                //   ),
+                //   onPressed: () async {
+                //     await NordicId.stopTrace;
+                //   },
+                // ),
+                // MaterialButton(
+                //   shape: RoundedRectangleBorder(
+                //     borderRadius: BorderRadius.circular(18.0),
+                //   ),
+                //   color: Colors.blueAccent,
+                //   child: const Text(
+                //     'Is Connected',
+                //     style: TextStyle(color: Colors.white),
+                //   ),
+                //   onPressed: () async {
+                //     bool? isConnected = await NordicId.isConnected;
+                //     setState(() {
+                //       isConnectedStatus = isConnected ?? false;
+                //     });
+                //   },
+                // ),
+                MaterialButton(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(18.0),
+                  ),
+                  color: Colors.blueAccent,
+                  child: const Text(
+                    'Disconnect',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  onPressed: () async {
+                    await NordicId.destroy;
+                  },
                 ),
-                color: Colors.blueAccent,
-                child: const Text(
-                  'Refresh Trace',
-                  style: TextStyle(color: Colors.white),
+                Text(
+                  'Nordic Reader isConnected:$isConnectedStatus',
+                  style: TextStyle(color: Colors.blue.shade800, fontSize: 18),
                 ),
-                onPressed: () async {
-                  await NordicId.refreshTracing;
-                },
-              ),
-              MaterialButton(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(18.0),
+                Text(
+                  device ?? "",
+                  style: TextStyle(color: Colors.blue.shade800, fontSize: 18),
                 ),
-                color: Colors.blueAccent,
-                child: const Text(
-                  'Stop Trace',
-                  style: TextStyle(color: Colors.white),
-                ),
-                onPressed: () async {
-                  await NordicId.stopTrace;
-                },
-              ),
-              MaterialButton(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(18.0),
-                ),
-                color: Colors.blueAccent,
-                child: const Text(
-                  'Is Connected',
-                  style: TextStyle(color: Colors.white),
-                ),
-                onPressed: () async {
-                  bool? isConnected = await NordicId.isConnected;
-                  setState(() {
-                    isConnectedStatus = isConnected ?? false;
-                  });
-                },
-              ),
-              Text(
-                'Nordic Reader isConnected:$isConnectedStatus',
-                style: TextStyle(color: Colors.blue.shade800, fontSize: 18),
-              ),
-              ..._data.map(
-                (TagEpc tag) => Card(
-                  color: Colors.blue.shade50,
-                  child: Container(
-                    width: 330,
-                    alignment: Alignment.center,
-                    padding: const EdgeInsets.all(8.0),
-                    child: Text(
-                      'Tag EPC:${tag.epc} RSSI:${tag.rssi}',
-                      style: TextStyle(color: Colors.blue.shade800),
+                ..._data.map(
+                  (TagEpc tag) => Card(
+                    color: Colors.blue.shade50,
+                    child: Container(
+                      width: 330,
+                      alignment: Alignment.center,
+                      padding: const EdgeInsets.all(8.0),
+                      child: Text(
+                        'Tag EPC:${tag.epc} RSSI:${tag.rssi}',
+                        style: TextStyle(color: Colors.blue.shade800),
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
