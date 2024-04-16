@@ -930,6 +930,7 @@ public class NurHelper {
             // original connection
             //NurDeviceListActivity.startDeviceRequest(context, mNurApi);
         }
+        Log.i(TAG, "Log from sdk " + mNurApi.isConnected());
         return mNurApi.isConnected();
     }
 
