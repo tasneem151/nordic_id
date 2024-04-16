@@ -75,17 +75,16 @@ public class NordicIdPlugin implements FlutterPlugin, MethodCallHandler, Activit
     private void handleMethods(MethodCall call, Result result) {
         switch (call.method) {
             case CHANNEL_Initialize:
-                 init();
-                result.success(true);
+                final boolean isInit = init();
+                result.success(isInit);
                 break;
             case CHANNEL_Connect:
                 NurHelper.getInstance().connect();
                 result.success(true);
                 break;
             case CHANNEL_ConnectUsb:
-                init();
-                NurHelper.getInstance().connectUsb();
-                result.success(true);
+                final boolean isUsbConnected = NurHelper.getInstance().connectUsb();
+                result.success(isUsbConnected);
                 break;
             case CHANNEL_IsConnected:
                 final boolean isConnected = NurHelper.getInstance().isConnected();
@@ -287,9 +286,15 @@ public class NordicIdPlugin implements FlutterPlugin, MethodCallHandler, Activit
         activityPluginBinding.addActivityResultListener(this);
     }
 
-    public void init() {
-        NurHelper.getInstance().init(activity);
-        NurHelper.getInstance().initReading(this);
+    public boolean init() {
+        try {
+            NurHelper.getInstance().init(activity);
+            NurHelper.getInstance().initReading(this);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+
     }
 
     @Override

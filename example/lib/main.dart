@@ -57,10 +57,7 @@ class _MyAppState extends State<MyApp> {
     });
   }
 
-  List<TagEpc> _data = [
-    TagEpc(epc: ' ', rssi: ' '),
-    TagEpc(epc: ' ', rssi: ' ')
-  ];
+  List<TagEpc> _data = [];
   void updateTags(dynamic result) {
     setState(() {
       _data = TagEpc.parseTags(result);

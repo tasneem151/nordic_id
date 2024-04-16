@@ -910,11 +910,8 @@ public class NurHelper {
         }
     }
 
-    public void connectUsb() {
-        if (mNurApi.isConnected()) {
-            hAcTr.dispose();
-            hAcTr = null;
-        } else {
+    public boolean connectUsb() {
+        if (!mNurApi.isConnected()){
             String strAddress;
             hAcTr = new NurApiUsbAutoConnect(context, mNurApi);
             strAddress = hAcTr.getType();
@@ -933,6 +930,7 @@ public class NurHelper {
             // original connection
             //NurDeviceListActivity.startDeviceRequest(context, mNurApi);
         }
+        return mNurApi.isConnected();
     }
 
     public boolean isConnected() {
