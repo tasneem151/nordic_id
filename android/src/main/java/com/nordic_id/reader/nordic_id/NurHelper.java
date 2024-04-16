@@ -917,9 +917,10 @@ public class NurHelper {
             strAddress = hAcTr.getType();
             Log.i(TAG, "Dev selected: code = " + strAddress);
             hAcTr.setAddress(strAddress);
-            hAcTr.onResume();
+            //hAcTr.onResume();
             mUiConnStatusText = hAcTr.getDetails();
             mNurListener.onGetDetails(mUiConnStatusText);
+            Log.i(TAG, "Log from inside if " + mNurApi.isConnected());
 
 
 
