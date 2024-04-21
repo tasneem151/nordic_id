@@ -46,6 +46,7 @@ public class NordicIdPlugin implements FlutterPlugin, MethodCallHandler, Activit
     private static final String CHANNEL_Read = "Read";
     private static final String CHANNEL_Start_Inv_Stream = "StartInventoryStream";
     private static final String CHANNEL_Stop_Inv_Stream = "StopInventoryStream";
+    private static final String CHANNEL_Usb_Permission = "usb_permission";
 
 
     private static final PublishSubject<Boolean> connectionStatus = PublishSubject.create();
@@ -83,8 +84,8 @@ public class NordicIdPlugin implements FlutterPlugin, MethodCallHandler, Activit
                 result.success(true);
                 break;
             case CHANNEL_ConnectUsb:
-                final boolean isUsbConnected = NurHelper.getInstance().connectUsb();
-                result.success(isUsbConnected);
+                NurHelper.getInstance().connectUsb();
+                result.success(true);
                 break;
             case CHANNEL_IsConnected:
                 final boolean isConnected = NurHelper.getInstance().isConnected();

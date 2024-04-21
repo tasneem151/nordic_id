@@ -910,18 +910,19 @@ public class NurHelper {
         }
     }
 
-    public boolean connectUsb() {
-        if (!mNurApi.isConnected()){
+    public void connectUsb() {
+        if (mNurApi.isConnected()) {
+            hAcTr.dispose();
+            hAcTr = null;
+        } else {
             String strAddress;
             hAcTr = new NurApiUsbAutoConnect(context, mNurApi);
             strAddress = hAcTr.getType();
             Log.i(TAG, "Dev selected: code = " + strAddress);
             hAcTr.setAddress(strAddress);
-            //hAcTr.onResume();
+            hAcTr.onResume();
             mUiConnStatusText = hAcTr.getDetails();
             mNurListener.onGetDetails(mUiConnStatusText);
-            Log.i(TAG, "Log from inside if " + mNurApi.isConnected());
-
 
 
 //            NurApiUsbAutoConnect usbAutoConnect =  new NurApiUsbAutoConnect(context, mNurApi);
@@ -931,8 +932,6 @@ public class NurHelper {
             // original connection
             //NurDeviceListActivity.startDeviceRequest(context, mNurApi);
         }
-        Log.i(TAG, "Log from sdk " + mNurApi.isConnected());
-        return mNurApi.isConnected();
     }
 
     public boolean isConnected() {
