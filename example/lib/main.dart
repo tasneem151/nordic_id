@@ -110,6 +110,7 @@ class _MyAppState extends State<MyApp> {
                     style: TextStyle(color: Colors.white),
                   ),
                   onPressed: () async {
+                    await NordicId.initialize;
                     await NordicId.connectUsb;
                   },
                 ),

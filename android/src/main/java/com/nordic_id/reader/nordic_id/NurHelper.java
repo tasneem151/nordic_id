@@ -911,10 +911,11 @@ public class NurHelper {
     }
 
     public void connectUsb() {
-        if (mNurApi.isConnected()) {
-            hAcTr.dispose();
-            hAcTr = null;
-        } else {
+//        if (mNurApi.isConnected()) {
+//            hAcTr.dispose();
+//            hAcTr = null;
+//        } else
+        {
             String strAddress;
             hAcTr = new NurApiUsbAutoConnect(context, mNurApi);
             strAddress = hAcTr.getType();
