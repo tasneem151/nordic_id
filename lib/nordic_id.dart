@@ -30,7 +30,7 @@ class NordicId {
     return _channel.invokeMethod('Connect');
   }
 
-  static Future<bool?> connectUsb() async {
+  static Future<bool?> get connectUsb async {
     return _channel.invokeMethod('ConnectUsb');
   }
 
@@ -38,15 +38,15 @@ class NordicId {
   //   return _channel.invokeMethod('DeviceName');
   // }
 
-  static Future<bool?> read() async {
+  static Future<bool?> get read async {
     return _channel.invokeMethod('Read');
   }
 
-  static Future<bool?> startInventoryStream() async {
+  static Future<bool?> get startInventoryStream async {
     return _channel.invokeMethod('StartInventoryStream');
   }
 
-  static Future<bool?> stopInventoryStream() async {
+  static Future<bool?> get stopInventoryStream async {
     return _channel.invokeMethod('StopInventoryStream');
   }
 

@@ -110,7 +110,7 @@ class _MyAppState extends State<MyApp> {
                     style: TextStyle(color: Colors.white),
                   ),
                   onPressed: () async {
-                    await NordicId.connectUsb();
+                    await NordicId.connectUsb;
                   },
                 ),
                 MaterialButton(
@@ -123,7 +123,7 @@ class _MyAppState extends State<MyApp> {
                     style: TextStyle(color: Colors.white),
                   ),
                   onPressed: () async {
-                    await NordicId.startInventoryStream();
+                    await NordicId.startInventoryStream;
                   },
                 ),
                 MaterialButton(
@@ -136,7 +136,7 @@ class _MyAppState extends State<MyApp> {
                     style: TextStyle(color: Colors.white),
                   ),
                   onPressed: () async {
-                    await NordicId.stopInventoryStream();
+                    await NordicId.stopInventoryStream;
                   },
                 ),
                 MaterialButton(
@@ -149,7 +149,7 @@ class _MyAppState extends State<MyApp> {
                     style: TextStyle(color: Colors.white),
                   ),
                   onPressed: () async {
-                    await NordicId.read();
+                    await NordicId.read;
                   },
                 ),
 
